@@ -36,8 +36,25 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     async function loadTransactions(): Promise<void> {
       const transact = await api.get('/transactions');
-      setTransactions(transact.data.transactions);
-      setBalance(transact.data.balance);
+
+      const transactionFormatted = transact.data.transactions.map(
+        (transaction: Transaction) => ({
+          ...transaction,
+          formattedValue: formatValue(transaction.value),
+          formattedDate: new Date(transaction.created_at).toLocaleDateString(
+            'pt-br',
+          ),
+        }),
+      );
+
+      const balanceFormatted = {
+        income: formatValue(transact.data.balance.income),
+        outcome: formatValue(transact.data.balance.outcome),
+        total: formatValue(transact.data.balance.total),
+      };
+
+      setTransactions(transactionFormatted);
+      setBalance(balanceFormatted);
     }
 
     loadTransactions();
@@ -84,19 +101,14 @@ const Dashboard: React.FC = () => {
 
             {transactions.map(transaction => (
               <tbody>
-                if(transaction.type === "income")
-                <tr>
+                <tr key={transaction.id}>
                   <td className="title">{transaction.title}</td>
-                  <td className="income">{transaction.value}</td>
-                  <td>Sell</td>
-                  <td>{transaction.created_at}</td>
-                </tr>
-                else
-                <tr>
-                  <td className="title">{transaction.title}</td>
-                  <td className="outcome">-{transaction.value}</td>
-                  <td>Hosting</td>
-                  <td>19/04/2020</td>
+                  <td className={transaction.type}>
+                    {transaction.type === 'outcome' && ' - '}
+                    {transaction.formattedValue}
+                  </td>
+                  <td>{transaction.category.title}</td>
+                  <td>{transaction.formattedDate}</td>
                 </tr>
               </tbody>
             ))}
